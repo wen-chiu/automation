@@ -5,6 +5,8 @@ Please checkout folder 'script' for auotmation script which suppport Enable/Disa
 please install python, all lib use in script was build-in.
 
 ## Usage
+> NOTE: Please execueted as Adminitrator or open terminal which run as Administrator
+
 move to download folder and execute as following
 
 Enable wi-fi
