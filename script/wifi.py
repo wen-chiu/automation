@@ -4,14 +4,10 @@ import sys
 import re
 import time
 
-PROC_TIMEOUT = 60 * 20
 
 class Windows():
     LINESEP = "\r\n"
     _RE_ERR = re.compile(r"Error\"\>(.+?)\<\/S\>")
-
-    _cred = ("-Credential (New-Object PSCredential("
-             "'{user}', (ConvertTo-SecureString '{passwd}' -AsPlainText -Force)))")
 
     def _parse_err(self, xml_err):
         return self.LINESEP.join(self._RE_ERR.findall(xml_err))
@@ -27,37 +23,13 @@ class Windows():
         else:
             return stdout
 
-    def execute_cmd_as_admin(self, command, raise_stderr=True, shell=False,
-                        timeout=PROC_TIMEOUT):
-        print("Execute command: %s" % command)
-        # cmd = r"""icm {%s} %s""" % (command, self._cred.format(**vars(self)))
+    def execute_command(self, command, raise_stderr=True, shell=False):
         ps = b64encode(command.replace("\n", "").encode('utf_16_le')).decode('ascii')
-        # proc = Popen('powershell -NoProfile -ExecutionPolicy unrestricted -encodedCommand %s '% ps,
-        #              stdout=PIPE, stderr=PIPE, shell=shell, universal_newlines=True)
-        # # Popen(['runas', '/noprofile', '/user:Administrator', 'NeedsAdminPrivilege.exe'],stdin=sp.PIPE) 
-        proc = Popen(['runas', '/noprofile', '/user:Administrator', '"powershell -encodedCommand %s"' % ps]
-                      ,stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=shell, universal_newlines=True)
-        proc.stdin.write('password\n')
-        proc.stdin.flush()
-        # prog.communicate()
-        # proc = Popen('powershell',
-        #              stdout=PIPE, stderr=PIPE, shell=shell)
-        # proc.args = "powershell %s" % command
-        # proc.timeout = timeout
-        # "start-process PowerShell -verb runas"
-        # powershell -Command "Start-Process powershell \"-ExecutionPolicy Bypass -NoProfile -NoExit -Command `\"cd \`\"%scriptFolderPath%\`\"; & \`\".\%powershellScriptFileName%\`\"`\"\" -Verb RunAs"
+        proc = Popen('powershell -encodedCommand %s ' % ps,
+                     stdout=PIPE, stderr=PIPE, shell=shell, universal_newlines=True)
         stdout, stderr = proc.communicate("`r`n")
-        print(stdout, stderr)
-
-    def execute_command(self, command, raise_stderr=True, shell=False,
-                            timeout=PROC_TIMEOUT):
-            # print("Execute command: %s" % command)
-            ps = b64encode(command.replace("\n", "").encode('utf_16_le')).decode('ascii')
-            proc = Popen('powershell -encodedCommand %s '% ps,
-                         stdout=PIPE, stderr=PIPE, shell=shell, universal_newlines=True)
-            stdout, stderr = proc.communicate("`r`n")
-            rtcode = proc.returncode
-            return self._handle_command(stdout, stderr, rtcode, raise_stderr)
+        rtcode = proc.returncode
+        return self._handle_command(stdout, stderr, rtcode, raise_stderr)
 
     def enable_wifi(self, iface_name):
         conn_status = self.check_connection(iface_name)
@@ -104,6 +76,7 @@ class Windows():
             return True
         else:
             return False
+
 
 if __name__ == '__main__':
     os = Windows()
